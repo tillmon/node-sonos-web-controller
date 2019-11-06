@@ -9,7 +9,8 @@ const async = require('async');
 const SonosDiscovery = require('sonos-discovery');
 const settings = {
   port: 8080,
-  cacheDir: './cache'
+  cacheDir: './cache',
+  exclude: []
 }
 
 try {
@@ -93,7 +94,9 @@ var socketServer = io.listen(server);
 
 socketServer.sockets.on('connection', function (socket) {
   // Send it in a better format
-  const players = discovery.players;
+  const players = discovery.players.filter(function(player) {
+    return settings.exclude.indexOf(player.roomName) === -1;
+  });
 
   if (players.length == 0) return;
 
@@ -209,7 +212,11 @@ socketServer.sockets.on('connection', function (socket) {
 });
 
 discovery.on('topology-change', function (data) {
-  socketServer.sockets.emit('topology-change', discovery.players);
+  const players = discovery.players.filter(function(player) {
+    return settings.exclude.indexOf(player.roomName) === -1;
+  });
+
+  socketServer.sockets.emit('topology-change', players);
 });
 
 discovery.on('transport-state', function (data) {
